@@ -1,0 +1,226 @@
+---
+title: "The Null Model - Step By Step"
+author: "Sérgio Moreira"
+date: "Last Update: `r format(Sys.time(), '%d %B, %Y')`" # current date
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[C]{The Null Model}
+  - \fancyfoot[R]{}
+  - \fancyfoot[C]{\thepage}
+  - \fancyfoot[L]{}
+  - \usepackage[default]{sourcesanspro}
+  - \usepackage[T1]{fontenc}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+mainfont: SourceSansPro
+output:
+  pdf_document:
+    includes:
+          in_header: header.tex
+    number_sections: yes
+toc: yes
+toc_depth: 4
+toc-title: Contents
+lot: FALSE
+---
+
+```{r Setup, echo=FALSE, message=FALSE, tidy=TRUE, warning=FALSE}
+options(scipen = 999) # exponential display off
+```
+
+
+\newpage
+
+# Objective
+
+This exercise uses the *Happiness Study* database form research with CLSBE students. In this exercise the **research question** is:
+
+- How happy are the CLSBE students?
+
+# Load the Data Base
+
+The data base of the Happiness Study is [*available here*](https://bit.ly/34TFA4p). **Download the data base load it in the R environment.**
+
+```{r Load}
+Happy <- read.csv("Happy.csv")
+View(Happy)
+```
+
+#  Model Estimation
+
+## Data Analysis Equation
+
+**The fundamental equation for data analysis** is *data = model + error*. In mathematical notation:  
+
+$$Y_i=\bar{Y}_i + e_i$$  
+
+- $Y_i$ is the value of the phenomena in subject *i*;
+- $\bar{Y}_i$ an estimate of the value of the phenomena in subject *i*;
+- $e_i$ is the diference between the value and the estimated value of the phenomena in subject *i*.  
+
+## The Null Model
+
+The null model is the simplest statistical model for a data set. It is given by a constant estimate:  
+
+$$\bar{Y}_i = b_0$$  
+
+- $b_0$ corresponds to the best estimate for our data when there is no independent variable to be modeled.  
+
+In the case were the dependent variable is quantitative, $b_0$ corresponds to the average of the dependent variable:
+
+$$b_0=\bar{X}$$  
+
+- $\bar{X}_i$ corresponds to the average of the dependent variable.  
+
+**Represent the null model**:  
+
+- Using the `summary` function and record the mean value;
+- Plotting the average in a scatter with the functions `plot` and `abline`;
+- Create a constant in the database with the mean value and look at the data frame with the `head` function.  
+
+```{r Null Model}
+summary(Happy$HappyScale) # Descriptives
+plot(Happy$ID, Happy$HappyScale, type = 'p', 
+     ylab = 'Happiness', xlab = 'Participant', main='Happiness Scatter') # Scatter
+abline(h=(mean(Happy$HappyScale)), col="blue") # Plot constant in the scatter
+Happy$nullmodel <- mean(Happy$HappyScale) # Represent estimate of the null model in the database
+head(Happy, n=5)
+```
+
+## The Null Model Error
+
+Models are estimates, simplifications of the data we observed. Consequently, every model has error.  The error is given by the difference between the data and the model:  
+
+$$e_i=Y_i-\bar{Y}_i$$
+
+**Represent the null model error**:  
+
+- Represent the difference between the data ($Y_i$) and the model ($\bar{Y}_i$) in the database.  
+
+```{r Error of the Null Model I}
+Happy$nullmodelerror <- Happy$HappyScale-Happy$nullmodel # difference between the data and model
+head(Happy, n=5)
+```
+
+The most intuitive solution to calculate the **total error of a model** is to add the error for each single case. However, this solution has a problem - the errors would cancel out because they have different signs.The statistical solution to calculate the total error of a model to perform the sum of square errors (SSE). Squaring the errors ensures that i) errors do not cancel out when added together and that ii) errors have weighted weights where larger errors weigh more than smaller errors (e.g., four errors of 1 squared and added together are worth 4 while that 3 errors of 0 and 1 error of 4 squared and added together are worth 16). The SSE is the conventional measure of error used in statistics to measure the performance of statistical models.  
+
+**Represent the null model squared error**:  
+
+- Represent the squared difference between the data ($Y_i$) and the model ($\bar{Y}_i$) in the database;
+- Compute the sum of the errors and of the sum of the squared erros (SSE) using the `sum` function.  
+
+```{r Error of the Null Model II}
+Happy$nullmodelerroSQR <- (Happy$HappyScale-Happy$nullmodel)^2 # squared difference between the data and model
+sum(Happy$nullmodelerror) # sum of the errors
+sum(Happy$nullmodelerroSQR) # sum of the squared errors
+head(Happy, n=5)
+```
+
+The SEQ indicates that the average happiness of `r mean(Happy$HappyScale)` has an error of `r sum(Happy$nullmodelerroSQR)` total square happiness. Note that the error in total square happiness is a problem because:  
+
+- it is a total (the more observations, the more error);
+- it is squared (does not allow a direct comparison with the original measure).  
+
+Considering that the SSE is:  
+
+$$SSE=\displaystyle\sum\limits_{i=1}^n e_i^2$$  
+
+The average of the SSE is the variance and can be computed using:  
+
+$$s^2=\frac{SSE}{n-p}$$  
+
+The square root of the SSE is the standard-deviation and can be computed using:  
+
+$$s=\sqrt{s^2}$$
+
+**Compute the SSE, variance and standard-deviation** using the formulas above and running the functions `var` and `sd`.  
+
+```{r Error of the Null Model III}
+var_y <- sum(Happy$nullmodelerroSQR)/(length(Happy$HappyScale)-1) # variance
+sd_y <- sqrt(var_y) # standard deviation
+var_y # print the variance computed by hand 
+var(Happy$HappyScale) # compare
+sd_y # print the standard deviation computed by hand 
+sd(Happy$HappyScale) # compare
+```
+
+## The Fundamental Principle of Data Analysis  
+
+The fundamental principle of data analysis is to minimize the error associated with a model. The lower the model error, the closer the model is to the data, and the better the model is. Error minimization is done using the Ordinary Squares Method (OLS). According to the OLS, the average is the best model to represent our data in a model without a VI and with a metric DV!  
+
+**See bellow the SSE for possibles values of the nulle model**. As expected, the model with lower SSE is the one with `r mean(Happy$HappyScale)`.
+
+```{r, echo=FALSE, message=FALSE, tidy=TRUE, warning=FALSE}
+Happy$nullmodel1 <- 1
+Happy$nullmodelerrorSQR1 <- (Happy$HappyScale-Happy$nullmodel1)^2
+SQR1 <- sum(Happy$nullmodelerrorSQR1)
+Happy$nullmodel2 <- 2
+Happy$nullmodelerrorSQR2 <- (Happy$HappyScale-Happy$nullmodel2)^2
+SQR2 <- sum(Happy$nullmodelerrorSQR2)
+Happy$nullmodel3 <- 3
+Happy$nullmodelerrorSQR3 <- (Happy$HappyScale-Happy$nullmodel3)^2
+SQR3 <- sum(Happy$nullmodelerrorSQR3)
+Happy$nullmodel4 <- 4
+Happy$nullmodelerrorSQR4 <- (Happy$HappyScale-Happy$nullmodel4)^2
+SQR4 <- sum(Happy$nullmodelerrorSQR4)
+Happy$nullmodel5 <- 5
+Happy$nullmodelerrorSQR5 <- (Happy$HappyScale-Happy$nullmodel5)^2
+SQR5 <- sum(Happy$nullmodelerrorSQR5)
+Happy$nullmodel6 <- 6
+Happy$nullmodelerrorSQR6 <- (Happy$HappyScale-Happy$nullmodel6)^2
+SQR6 <- sum(Happy$nullmodelerrorSQR6)
+Happy$nullmodel7 <- 7
+Happy$nullmodelerrorSQR7 <- (Happy$HappyScale-Happy$nullmodel7)^2
+SQR7 <- sum(Happy$nullmodelerrorSQR7)
+Happy$nullmodel8 <- 8
+Happy$nullmodelerrorSQR8 <- (Happy$HappyScale-Happy$nullmodel8)^2
+SQR8 <- sum(Happy$nullmodelerrorSQR8)
+Happy$nullmodel9 <- 9
+Happy$nullmodelerrorSQR9 <- (Happy$HappyScale-Happy$nullmodel9)^2
+SQR9 <- sum(Happy$nullmodelerrorSQR9)
+Happy$nullmodel10 <- 10
+Happy$nullmodelerrorSQR10 <- (Happy$HappyScale-Happy$nullmodel10)^2
+SQR10 <- sum(Happy$nullmodelerrorSQR10)
+OLS <- as.data.frame(c(SQR1, SQR2, SQR3, SQR4, SQR5, SQR6, SQR7, SQR8, SQR9, SQR10))
+names(OLS)[names(OLS) == "c(SQR1, SQR2, SQR3, SQR4, SQR5, SQR6, SQR7, SQR8, SQR9, SQR10)"] <- "SSE"
+plot(OLS$SSE, xlab = "Null Model Value", ylab = "SSE")
+```
+
+## Model Estimation Conclusion   
+
+The null model and null model error show that:   
+
+- the mean happiness of the CLSBE students is:  
+
+```{r Mean}
+mean(Happy$HappyScale) 
+``` 
+
+- the average error associated with the mean is:  
+
+```{r SD}
+sd(Happy$HappyScale) 
+```
+
+# The Experienced Researcher  
+
+Experienced Researchers report promptly the results of the model estimation, they don't need to estimate in detail the null model and the error of the null mode. The calculation of the null model and error of the null model is a demonstration of the origin and meaning of these concepts (model and error) in the context of the simplest type of research problem possible.  
+
+- **Why do we need models?** Our data are usually bulky and of a form that is hard to communicate to others. The compact description provided by the models is much easier to communicate.
+- **How do we know which model is best?** The minimization of error in linear models is done according to the Ordinary Least Squares Method (OLS). According to this method, when we have only one DV, the best null model is: for a metric DV, the average; for an ordinal RV, the median; and for a nominal DV, the mode.
+- **Why do we need a model as simple as the null model?** The null model is the model against which we can compare the performance of more complex models that model the effects of IVs in a DV. A more complex model is only better than a null model if it manages to have less error than the null model!
+- **When do we look at models with VIs?** The next classes are dedicated entirely to modeling the effects of IVs in a DV. For now, keep in mind the data analysis equation and the concepts of null model and null model error.
+- **Why don't we talk about measures of central tendency or descriptive statistics?** Averages, modes and medians are often referred to as measures of central tendency. Here we treat these measures as models, simplifications of our data.
+- **And why don't we talk about dispersion measures?** Sum of square errors, variance, standard deviation and standard error are often referred to as data dispersion measures. Here we treat these dispersion measures as error measures, the deviation between data and model.  
+
+# Knowledge Assessment  
+
+Here is what you should know by now:  
+
+- What is the basic equation for data analysis?
+- What is the null model?
+- What are the most famous (null) models?
+- What is the error associated with the null model?
+- How is the error of a model measured?
+- What is the fundamental principle of data analysis?

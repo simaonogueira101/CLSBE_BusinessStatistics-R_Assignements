@@ -1,10 +1,15 @@
-var1 <- "hello world!"
-arr1 <- c("hello!", "my", "name", "is", "Simão.")
+WAdatabase <- read.csv("WA_ESSDatabase.csv", header = TRUE)
 
-print(var1)
+# var1 <- "hello world!"
+# arr1 <- c("hello!", "my", "name", "is", "Simão.")
+# 
+# print(var1)
+# 
+# for (string in arr1) {
+#   print(string)
+# }
 
-for (string in arr1) {
-  print(arr1)
-}
 
-
+total_count <- nrow(WA_ESSdatabase)
+behaviour_count <- length(WA_ESSdatabase[WA_ESSdatabase$ipbhprp == 2, 'ipbhprp'])
+print(behaviour_count / total_count)
