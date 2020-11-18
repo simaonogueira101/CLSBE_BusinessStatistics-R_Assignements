@@ -13,3 +13,5 @@ WAdatabase <- read.csv("WA_ESSDatabase.csv", header = TRUE)
 total_count <- nrow(WA_ESSdatabase)
 behaviour_count <- length(WA_ESSdatabase[WA_ESSdatabase$ipbhprp == 2, 'ipbhprp'])
 print(behaviour_count / total_count)
+
+
