@@ -3,7 +3,7 @@
 library(ggplot2)
 library(equatiomatic)
 
-#WA3database <- read.csv("WA_ESSDatabase.csv", header = TRUE)
+WA3database <- read.csv("WA_ESSDatabase.csv", header = TRUE)
 
 # Function to calculate Mode
 mode <- function(v) {
