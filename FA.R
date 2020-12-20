@@ -3,10 +3,9 @@ options(scipen = 999)
 
 # Install required packages
 # install.packages("lm.beta")
-# install.packages("broom")
 
+# Load required packages
 library(lm.beta)
-library(broom)
 
 # Load DF
 # FAdatabase <- read.csv("WA_ESSDatabase.csv", header = TRUE)
@@ -60,7 +59,9 @@ excluded_columns <- c(
   "lvgptnea",
   "mbtru",
   "edulvlb",
-  "edulvlpb"
+  "edulvlpb",
+  "mainact",
+  "mnactp"
 )
 
 debug_columns <- c(
@@ -78,7 +79,7 @@ good_columns <- colnames(FAdatabase)[! colnames(FAdatabase) %in% excluded_column
 model <- c(dependent_var)
 
 # Function to clean database
-clean_database <- function (database, variables) {
+cleanDatabase <- function (database, variables) {
   # Determine type of scale and clean column
   for (variable in variables) {
     
@@ -102,26 +103,48 @@ progress_current <- 0
 # Iterate to find each variable for the model
 for (i in 1:iteration_num) {
   # Create empty results array
-  results <- data.frame(variable = character(0), p_value_individual = numeric(0), r_squared_overall = numeric(0), p_value_overall = numeric(0))
+  results <- data.frame(
+    variable = character(0),
+    p_value_individual = numeric(0),
+    r_squared_overall = numeric(0),
+    p_value_overall = numeric(0)
+  )
   
   for (column in good_columns[! good_columns %in% model]) {
     # Duplicate DF into a temporary object
     temp_database <- data.frame(FAdatabase)
     
     proposed_model <- c(model, column)
-    temp_database <- clean_database(temp_database, proposed_model)
+    temp_database <- cleanDatabase(temp_database, proposed_model)
     
     current_model <- ""
     
     for (i in 1:length(model)) {
       if(i < 2) {
-        current_model <- paste("temp_database$", current_model, toString(model[i]), " ~ ", sep="")
+        current_model <- paste(
+          "temp_database$",
+          current_model,
+          toString(model[i]),
+          " ~ ",
+          sep = ""
+        )
       } else {
-        current_model <- paste(current_model, "temp_database$", toString(model[i]), " + ", sep="")
+        current_model <- paste(
+          current_model,
+          "temp_database$",
+          toString(model[i]),
+          " + ",
+          sep = ""
+        )
       }
     }
     
-    current_model <- paste(current_model, "temp_database$", toString(column), sep="")
+    current_model <- paste(
+      current_model,
+      "temp_database$",
+      toString(column),
+      sep = ""
+    )
 
     # Temporary model analysis
     temp_model <- lm(formula(current_model))
@@ -150,7 +173,12 @@ for (i in 1:iteration_num) {
     results[nrow(results) + 1,] <- temp_results
     
     # Update progress indicator
-    print(paste("Progress: ", format(round(progress_current / progress_total * 100, 0), nsmall = 0), "%", sep=""))
+    print(paste(
+      "Progress: ",
+      format(round(progress_current / progress_total * 100, 0),nsmall = 0),
+      "%",
+      sep = ""
+    ))
     progress_current <- progress_current + 1
   }
   
@@ -164,16 +192,67 @@ for (i in 1:iteration_num) {
   print("-----------------")
   model <- c(model, results[1, 1])
   print(paste("Variable #", i, ": ", results[1, 1], sep=""))
-  print(paste("R-Squared: ", results[1, 2], sep=""))
+  print(paste("Current R-Squared: ", results[1, 3], sep=""))
   print("-----------------")
 }
 
-# "trstplc" "trstlgl" "mainact" "mnactp"  "rlgdnm" 
-testDB <- clean_database(FAdatabase, c("trstplc", "dmcntov", "lrscale", "trstlgl", "mainact", "mnactp", "rlgdnm"))
-summary(lm.beta(lm(testDB$trstplc ~ testDB$dmcntov + testDB$lrscale)))
-summary(lm.beta(lm(testDB$trstplc ~ testDB$trstlgl + testDB$mainact + testDB$mnactp + testDB$rlgdnm)))
+createFormula <- function (model, database) {
+  formula <- ""
+  
+  for (i in 1:length(model)) {
+    if(i == 1) {
+      formula <- paste(
+        formula,
+        database,
+        "$",
+        toString(model[i]),
+        " ~ ",
+        sep = ""
+      )
+    } else if (i < length(model)) {
+      formula <- paste(
+        formula,
+        database,
+        "$",
+        toString(model[i]),
+        " + ",
+        sep = ""
+      )
+    } else {
+      formula <- paste(
+        formula,
+        database,
+        "$",
+        toString(model[i]),
+        sep = ""
+      )
+    }
+  }
+  
+  return(formula)
+}
 
-anova(
-  lm(testDB$trstplc ~ testDB$dmcntov + testDB$lrscale),
-  lm(testDB$trstplc ~ testDB$trstlgl + testDB$mainact + testDB$mnactp + testDB$rlgdnm)
+adapted_variables <- c(
+  dependent_var,
+  "wkdcorga",
+  "iprspot",
+  "impfree",
+  "tporgwk"
 )
+
+all_variables <- c(
+  model,
+  adapted_variables
+)
+
+final_database <- clean_database(FAdatabase, all_variables)
+
+optimized_model <- createFormula(model, "final_database")
+adapted_model <- createFormula(adapted_variables, "final_database")
+
+optimized_summary <- summary(lm.beta(lm(optimized_model)))
+adapted_summary <- summary(lm.beta(lm(adapted_model)))
+
+pre_change <- optimized_summary$r.squared - adapted_summary$r.squared
+
+
